@@ -3,11 +3,11 @@
 
 #include <QtGui>
 
-class ayikWord
+class AyikWord
 {
 public:
-    ayikWord();    
-    ayikWord(const QString& name,const QString& meaning,const QString& rating="5",const QString& tag="");//def. rating 5
+    AyikWord();
+    AyikWord(const QString& name,const QString& meaning,const QString& rating="5",const QString& tag="");//def. rating 5
     QString getName() const;
     QString getMeaning() const;
     QString getRating() const;
@@ -17,7 +17,8 @@ public:
     void setRating(const QString& rating);
     void setTag(const QString& tag);
 private:
-    QString name,meaning;
+    QString name;
+    QString meaning;
     QString rating;
     QString tag;
 

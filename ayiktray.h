@@ -2,17 +2,16 @@
 #define AYIKTRAY_H
 
 #include <QtGui>
-#include "ayikpopup.h"
 #include <QtWidgets/QDialog>
 #include <QtWidgets/QSystemTrayIcon>
 
-class ayikTray : public QDialog
+class AyikTray : public QDialog
 {
     Q_OBJECT
 
 public:
-    ayikTray();
-    static ayikTray* getInstance();
+    AyikTray();
+    static AyikTray* getInstance();
     void setVisible(bool visible);
 
 private slots:
@@ -23,7 +22,7 @@ private slots:
     void iconActivated(QSystemTrayIcon::ActivationReason reason);
 
 private:
-    static ayikTray* instance;
+    static AyikTray* instance;
     void createActions();
     void createTrayIcon();
     QTimer timer;

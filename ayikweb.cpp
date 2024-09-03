@@ -1,36 +1,43 @@
 #include "ayikweb.h"
 #include "dictutil.h"
 
-ayikWeb::ayikWeb(QObject *parent) : QThread(parent)
+AyikWeb::AyikWeb(QObject *parent) : QObject(parent)
 {
+    networkAccessManager = new QNetworkAccessManager(this);
+    connect(networkAccessManager, &QNetworkAccessManager::finished, this, &AyikWeb::onFinished);
 }
 
-void ayikWeb::run()
+QString AyikWeb::getLastWordMeaning()
 {
-    while(true) {
-        mutex.lock();
-        if(!targetWord.isEmpty()) {
-            //QString content = hw->getUrlContent("http://www.zargan.com/sozluk.asp?Sozcuk="+word+"");
-            //QString content = dictutil::getUrlContent("www.zargan.com","/sozluk.asp?Sozcuk="+targetWord+"","ISO8859-9");
-            //answer = dictutil::parse_zargan(content);
-            QString content = dictutil::getUrlContent("www.seslisozluk.net","/"+targetWord+"-nedir-ne-demek/","UTF-8");
-            QString answer = dictutil::parse_seslisozluk(content);
-            targetWord.clear();
-            emit lookupDone();
-        }
-        mutex.unlock();
-        msleep(1000);
+    return lastWordMeaning;
+}
+
+void AyikWeb::lookupWordMeaning(AyikWord ayikWord) {
+    lookupWordMeaningFromSeslisozluk(ayikWord);
+}
+
+void AyikWeb::lookupWordMeaningFromSeslisozluk(AyikWord ayikWord) {
+    QUrl url("https://www.seslisozluk.net/"+ayikWord.getName()+"-nedir-ne-demek/");
+    QNetworkRequest request;
+    request.setUrl(url);
+
+    // Optionally, configure SSL (e.g., disable certificate validation)
+    QSslConfiguration sslConfig = request.sslConfiguration();
+    sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
+    request.setSslConfiguration(sslConfig);
+
+    // Send the request - will callback when finished
+    networkAccessManager->get(request);
+}
+
+void AyikWeb::onFinished(QNetworkReply* reply) {
+    if (reply->error() == QNetworkReply::NoError) {
+        lastHttpResponse = reply->readAll();
+        qDebug() << "Response:" << lastHttpResponse;
+        lastWordMeaning = DictUtil::parseSeslisozluk(lastHttpResponse);
+        emit lookupDone();
+    } else {
+        qDebug() << "Error:" << reply->errorString();
     }
-}
-
-void ayikWeb::lookupWord(QString word)
-{
-    mutex.lock();
-    targetWord = word;
-    mutex.unlock();
-}
-
-QString ayikWeb::getAnswer()
-{
-    return answer;
+    reply->deleteLater();
 }

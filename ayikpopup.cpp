@@ -4,15 +4,13 @@
 #include "ayikweb.h"
 #include <QtWidgets/QApplication>
 
-ayikPopup* ayikPopup::instance;
+AyikPopup* AyikPopup::instance;
 
-ayikPopup::ayikPopup()
+AyikPopup::AyikPopup()
 {
     instance = this;
-    aweb.start();
 
     setWindowFlags(Qt::ToolTip | Qt::WindowStaysOnTopHint);
-    //setWindowFlags(Qt::WindowStaysOnTopHint);
     setGeometry(0,0,320,160);
     setObjectName("ayikpopup");
     //setStyleSheet("#ayikpopup {background-color: rgb(0, 170, 255);} ");
@@ -22,28 +20,28 @@ ayikPopup::ayikPopup()
 
     QHBoxLayout *upperlayout = new QHBoxLayout();
     QHBoxLayout *middlelayout = new QHBoxLayout();
-    rating = new starrating(5,5);
+    rating = new StarRating(5,5);
     rating->setEditable(true);
-    btn_close = new QPushButton(QIcon(":/images/close.png"),"");
-    btn_prev = new QPushButton(QIcon(":/images/back-32.png"),"");
-    btn_next = new QPushButton(QIcon(":/images/next-32.png"),"");
-    btn_reveal = new QPushButton(QIcon(":/images/helpCursor.png"),"");
-    btn_reveal->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
+    btnClose = new QPushButton(QIcon(":/images/close.png"),"");
+    btnPrev = new QPushButton(QIcon(":/images/back-32.png"),"");
+    btnNext = new QPushButton(QIcon(":/images/next-32.png"),"");
+    btnReveal = new QPushButton(QIcon(":/images/helpCursor.png"),"");
+    btnReveal->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
 
-    btn_close->setToolTip(tr("Close"));
-    btn_next->setToolTip(tr("Next"));
-    btn_reveal->setToolTip(tr("Reveal"));
+    btnClose->setToolTip(tr("Close"));
+    btnNext->setToolTip(tr("Next"));
+    btnReveal->setToolTip(tr("Reveal"));
 
-    label_tag = new QLabel();
-    label_word = new QLabel();
-    QFont font = label_word->font();
+    labelTag = new QLabel();
+    labelWord = new QLabel();
+    QFont font = labelWord->font();
     font.setBold(true);
-    label_word->setFont(font);
+    labelWord->setFont(font);
 
-    txt_meaning = new QTextEdit();
-    txt_meaning->setTextColor(QColor::fromRgb(0,0,0));
-    txt_meaning->setReadOnly(true);
-    label_loading = new QLabel("Loading");
+    txtMeaning = new QTextEdit();
+    txtMeaning->setTextColor(QColor::fromRgb(0,0,0));
+    txtMeaning->setReadOnly(true);
+    labelLoading = new QLabel("Loading");
     //bar_loading = new QProgressBar();
     loading = new LoadingWidget();
     loading->setVisible(false);
@@ -58,20 +56,20 @@ ayikPopup::ayikPopup()
     //frame_help->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     QVBoxLayout *helplayout = new QVBoxLayout();
     helplayout->addWidget(loading);
-    helplayout->addWidget(txt_meaning);
+    helplayout->addWidget(txtMeaning);
     //helplayout->addWidget(btn_reveal);
 
     upperlayout->addWidget(rating);
     upperlayout->addStretch();
-    upperlayout->addWidget(label_tag);
-    upperlayout->addWidget(btn_close);
+    upperlayout->addWidget(labelTag);
+    upperlayout->addWidget(btnClose);
 
-    middlelayout->addWidget(btn_prev);
-    middlelayout->addWidget(btn_next);
-    middlelayout->addWidget(btn_reveal);
-    middlelayout->addWidget(label_word);
+    middlelayout->addWidget(btnPrev);
+    middlelayout->addWidget(btnNext);
+    middlelayout->addWidget(btnReveal);
+    middlelayout->addWidget(labelWord);
     middlelayout->addStretch();
-    btn_prev->setVisible(false);
+    btnPrev->setVisible(false);
 
     layout->addLayout(upperlayout);
     /*QLabel *label = new QLabel();
@@ -83,97 +81,99 @@ ayikPopup::ayikPopup()
     layout->addStretch();
 
     createActions();
-    ayikDB::getInstance();//lets instantiate db
+    AyikDB::getInstance();//lets instantiate db
 }
-ayikPopup* ayikPopup::getInstance()
+AyikPopup* AyikPopup::getInstance()
 {
-    if(instance==NULL) instance = new ayikPopup();
+    if(instance==NULL) instance = new AyikPopup();
     return instance;
 }
 
-void ayikPopup::showPopup()
+void AyikPopup::showPopup()
 {
-    //next word
     nextWord();
     //screen geometry
-    //QRect scr = QApplication::desktop()->screenGeometry();
     QRect scr = QGuiApplication::primaryScreen()->geometry();
-
     setGeometry(scr.width() - width() - 10,scr.height() - height() - 40,width(),height());
     show();
 }
-void ayikPopup::hidePopup()
+void AyikPopup::hidePopup()
 {
     hide();
-    emit window_hidden();
+    emit windowHidden();
 }
-void ayikPopup::nextWord()
+void AyikPopup::nextWord()
 {
     QString err;
-    ayikOption* ao = ayikOption::getInstance();
-    ayikDB* db = ayikDB::getInstance();
-    //db->getRandomWord(w);
-    db->getRandomWordMemdb(currentword,ao->getTag(),ao->getRating(),ao->getRatingOperator(),err);
+    AyikOption* ayikOption = AyikOption::getInstance();
+    AyikDB* db = AyikDB::getInstance();
+    db->getRandomWord(currentAyikWord,ayikOption->getTag(),ayikOption->getRating(),ayikOption->getRatingOperator(),err);
     if(err!="") qDebug()<<err;
-    setWord(currentword);
+    prepareUiWithCurrentWord();
 }
-void ayikPopup::prevWord()
+void AyikPopup::prevWord()
 {
 
 }
-void ayikPopup::revealWord()
+void AyikPopup::revealWord()
 {
     emit beforeReveal();
-    if(currentword.getMeaning().trimmed().isEmpty()) {
-        QString word = currentword.getName();
-        aweb.lookupWord(word);
+    if(currentAyikWord.getMeaning().trimmed().isEmpty()) {
+        ayikWeb.lookupWordMeaning(currentAyikWord);
+        //afterReveal() will be emitted when lookup done
     } else {
         emit afterReveal();
     }
 }
-void ayikPopup::createActions()
+void AyikPopup::createActions()
 {
-    connect(btn_close,SIGNAL(clicked()),this,SLOT(hidePopup()));
-    connect(btn_next,SIGNAL(clicked()),this,SLOT(nextWord()));
-    connect(btn_prev,SIGNAL(clicked()),this,SLOT(prevWord()));
-    connect(btn_reveal,SIGNAL(clicked()),this,SLOT(revealWord()));
+    connect(btnClose,SIGNAL(clicked()),this,SLOT(hidePopup()));
+    connect(btnNext,SIGNAL(clicked()),this,SLOT(nextWord()));
+    connect(btnPrev,SIGNAL(clicked()),this,SLOT(prevWord()));
+    connect(btnReveal,SIGNAL(clicked()),this,SLOT(revealWord()));
     connect(rating,SIGNAL(starCountChanged(int)),this,SLOT(updateRating(int)));
     connect(this,SIGNAL(beforeReveal()),this,SLOT(slotBeforeReveal()));
     connect(this,SIGNAL(afterReveal()),this,SLOT(slotAfterReveal()));
-    connect(&aweb,SIGNAL(lookupDone()),this,SLOT(slotLookupDone()));
+    connect(&ayikWeb,SIGNAL(lookupDone()),this,SLOT(slotLookupDone()));
 }
 
-void ayikPopup::setWord(const ayikWord& w)
+void AyikPopup::prepareUiWithCurrentWord()
 {
     //hide reveal frame
     loading->setVisible(false);
-    txt_meaning->setVisible(false);
+    txtMeaning->setVisible(false);
     //set values
-    label_word->setText(w.getName());
-    rating->setStarCount(w.getRating().toInt());
-    label_tag->setText(w.getTag());
+    labelWord->setText(currentAyikWord.getName());
+    rating->setStarCount(currentAyikWord.getRating().toInt());
+    labelTag->setText(currentAyikWord.getTag());
 }
 
-void ayikPopup::updateRating(int rating)
+void AyikPopup::updateRating(int rating)
 {
-    currentword.setRating(QString::number(rating));
-    ayikDB* db = ayikDB::getInstance();
-    db->updateWord(currentword);
+    currentAyikWord.setRating(QString::number(rating));
+    AyikDB* db = AyikDB::getInstance();
+    db->updateWord(currentAyikWord);
 }
-void ayikPopup::slotBeforeReveal()
+void AyikPopup::slotBeforeReveal()
 {
     loading->setVisible(true);
-    txt_meaning->setVisible(false);
+    txtMeaning->setVisible(false);
+    //retrieve meaning if not present at hand
+    if(currentAyikWord.getMeaning().isEmpty()) {
+        ayikWeb.lookupWordMeaning(currentAyikWord);
+    }
 }
-void ayikPopup::slotAfterReveal()
+void AyikPopup::slotAfterReveal()
 {
-    txt_meaning->setPlainText(currentword.getMeaning());
-    //txt_meaning->setHtml(currentword.getMeaning());
+    AyikDB* db = AyikDB::getInstance();
+    db->updateWord(currentAyikWord);
+    //txt_meaning->setPlainText(currentword.getMeaning());
+    txtMeaning->setHtml(currentAyikWord.getMeaning());
     loading->setVisible(false);
-    txt_meaning->setVisible(true);
+    txtMeaning->setVisible(true);
 }
-void ayikPopup::slotLookupDone()
+void AyikPopup::slotLookupDone()
 {
-    currentword.setMeaning(aweb.getAnswer());
-    slotAfterReveal();
+    currentAyikWord.setMeaning(ayikWeb.getLastWordMeaning());
+    emit afterReveal();
 }

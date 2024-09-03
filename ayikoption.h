@@ -13,13 +13,13 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QMainWindow>
 
-class ayikOption : public QMainWindow
+class AyikOption : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    ayikOption();
-    static ayikOption* getInstance();
+    AyikOption();
+    static AyikOption* getInstance();
     void init();
     void postInit();
 
@@ -31,7 +31,7 @@ public:
     void showHelp();
 
 private:
-    static ayikOption* instance;
+    static AyikOption* instance;
 
     QTabWidget* tabs;
 
@@ -47,11 +47,12 @@ private:
 
     QGroupBox* group_src_hist;
     QStringList ratingLevels;
-    ayikRating* rating;
+    AyikRating* rating;
     QComboBox *cmb_rating_oper;
 
     QPushButton* btn_add_file;
     QPushButton* btn_delete_word;
+    QPushButton* btn_delete_all;
     QLineEdit* lineedit_word_filter;
     QStringList tableHeaders;
     TableView* tableview;
@@ -70,6 +71,7 @@ protected:
 private slots:
     void slot_add_file();
     void slot_delete_word();
+    void slot_delete_all();
     void slot_word_selected(const QModelIndex &current,const QModelIndex &previous);
     void slot_txt_meaning_changed();
     void slot_filterTextChanged(const QString& text);

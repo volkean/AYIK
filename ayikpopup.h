@@ -18,15 +18,14 @@
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QProgressBar>
 
-class ayikPopup : public QFrame /*QWidget*/
+class AyikPopup : public QFrame /*QWidget*/
 {
     Q_OBJECT
 
 public:
-    ayikPopup();
-    static ayikPopup* getInstance();
+    AyikPopup();
+    static AyikPopup* getInstance();
     void showPopup();
-    void setWord(const ayikWord& w);
 
 protected slots:
     void hidePopup();
@@ -39,28 +38,29 @@ protected slots:
     void slotLookupDone();
 
 private:
+    void prepareUiWithCurrentWord();
     void createActions();
 
-    static ayikPopup* instance;
+    static AyikPopup* instance;
     QGridLayout *grid;
     QVBoxLayout *layout;
-    starrating *rating;
-    QPushButton *btn_close;
-    QPushButton *btn_prev;
-    QPushButton *btn_next;
-    QPushButton *btn_reveal;
-    QLabel *label_tag;
-    QLabel *label_word;
-    QTextEdit *txt_meaning;
-    QLabel *label_loading;
-    QProgressBar *bar_loading;
+    StarRating *rating;
+    QPushButton *btnClose;
+    QPushButton *btnPrev;
+    QPushButton *btnNext;
+    QPushButton *btnReveal;
+    QLabel *labelTag;
+    QLabel *labelWord;
+    QTextEdit *txtMeaning;
+    QLabel *labelLoading;
+    QProgressBar *barLoading;
     LoadingWidget *loading;
 
-    ayikWord currentword;
-    ayikWeb aweb;
+    AyikWord currentAyikWord;
+    AyikWeb ayikWeb;
 
 signals:
-    void window_hidden();
+    void windowHidden();
     void beforeReveal();
     void afterReveal();
 };

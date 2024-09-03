@@ -6,18 +6,17 @@
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QCheckBox>
 
-class ayikRating : public QWidget
+class AyikRating : public QWidget
 {
 public:
-    ayikRating(bool chk,bool rateable,int min,int max);
+    AyikRating(bool chk,bool rateable,int min,int max);
 
     QString getRating();
 
 private:
     QHBoxLayout* layout;
-    starrating* rating;
-    QCheckBox* chkbox;
-    //QLabel* label;
+    StarRating* rating;
+    QCheckBox* checkBox;
 };
 
 #endif // AYIKRATING_H

@@ -8,23 +8,23 @@ qDebug() << x.lastError().text(); \
         return; \
     }
 
-ayikDB* ayikDB::instance;
+AyikDB* AyikDB::instance;
 
-ayikDB::ayikDB()
+AyikDB::AyikDB()
 {
-    db = new DatabaseConnection("litil","QSQLITE");
-    db->setConnectionParams("","","","","litil");
+    db = new DatabaseConnection("ayik.sqlite","QSQLITE");
+    db->setConnectionParams("","","","","ayik.sqlite");
     instance = this;
 
     db->connect();
     createDbTables();
 }
-ayikDB* ayikDB::getInstance()
+AyikDB* AyikDB::getInstance()
 {
-    if(instance==NULL) instance = new ayikDB();
+    if(instance==NULL) instance = new AyikDB();
     return instance;
 }
-int ayikDB::loadWordsXml(const QString& filename,bool append)
+int AyikDB::loadWordsXml(const QString& filename,bool append)
 {
     QDomDocument doc;
     QFile file( filename );
@@ -56,7 +56,7 @@ int ayikDB::loadWordsXml(const QString& filename,bool append)
                 QString tag = e.attribute("tag","");
                 QString rating = e.attribute("rating","");
                 QString meaning = e.text();
-                ayikWord a_word(name,meaning,rating,tag);
+                AyikWord a_word(name,meaning,rating,tag);
                 words.append(a_word);
             }
         }
@@ -65,7 +65,7 @@ int ayikDB::loadWordsXml(const QString& filename,bool append)
     }
     return 0;
 }
-void ayikDB::loadWords(const QString& filename,bool append)
+void AyikDB::loadWords(const QString& filename,bool append)
 {
     QFile file(filename);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -78,12 +78,12 @@ void ayikDB::loadWords(const QString& filename,bool append)
         QString line = in.readLine();
         QStringList list1 = line.split("=");
         if(list1.length() > 1) {
-            ayikWord a_word(list1.at(0),list1.at(1));
+            AyikWord a_word(list1.at(0),list1.at(1));
             words.append(a_word);
         }
     }
 }
-void ayikDB::loadWordMemdb(const QString& filename,bool append)
+void AyikDB::loadWordMemdb(const QString& filename,bool append)
 {
     QFile file(filename);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -96,12 +96,12 @@ void ayikDB::loadWordMemdb(const QString& filename,bool append)
         QString line = in.readLine();
         QStringList list1 = line.split("=");
         if(list1.length() > 1) {
-            ayikWord a_word(list1.at(0),list1.at(1));
+            AyikWord a_word(list1.at(0),list1.at(1));
             insertWord(a_word);
         }
     }
 }
-void ayikDB::loadWords(const QStringList& filenames,bool append)
+void AyikDB::loadWords(const QStringList& filenames,bool append)
 {
     if(!append) words.clear();
 
@@ -112,23 +112,12 @@ void ayikDB::loadWords(const QStringList& filenames,bool append)
     //testDb();
     regenerateShuffle();
 }
-void ayikDB::getRandomWord(ayikWord& w)
-{
-    static int i=0;
-    //    qDebug() <<"i:"<<i << "seqsize:"<< seq.size() << "wordsize:"<<words.size();
-    if(i >= seq.size()) i=0;
-    if(seq.size() > 0) {
-        int index = seq.at(i) - 1;
-        w = words.at(index);
-        i++;
-    }
-}
-void ayikDB::regenerateShuffle()
+void AyikDB::regenerateShuffle()
 {
     //lets create a shuffle list
-    dictutil::randomSequence(seq,words.size());
+    DictUtil::randomSequence(seq,words.size());
 }
-void ayikDB::createDbTables()
+void AyikDB::createDbTables()
 {
     QSqlQuery query;
     query.exec("CREATE TABLE IF NOT EXISTS words ("
@@ -141,7 +130,7 @@ void ayikDB::createDbTables()
                );
     ERRCHK(query);
 }
-void ayikDB::insertWord(const ayikWord& w)
+void AyikDB::insertWord(const AyikWord& w)
 {
     createDbTables();
     QSqlQuery query;
@@ -157,14 +146,14 @@ void ayikDB::insertWord(const ayikWord& w)
 
     ERRCHK(query);
 }
-/*void ayikDB::insertWords(const QList<ayikWord>& wlist)
+/*void AyikDB::insertWords(const QList<AyikWord>& wlist)
 {
     QString err="";
     QString sqlstr;
     QueryResult res;
     db->execute("BEGIN TRANSACTION",res);
     for(int i=0;i<wlist.size();i++) {
-        ayikWord w = wlist.at(i);
+        AyikWord w = wlist.at(i);
         sqlstr = "INSERT INTO words(tag,name,meaning,rating) VALUES("
                   "'"+w.getTag()+"',"
                   "'"+w.getName()+"',"
@@ -178,12 +167,12 @@ void ayikDB::insertWord(const ayikWord& w)
     }
     db->execute("END",res);
 }*/
-void ayikDB::insertWords(const QList<ayikWord>& wlist)
+void AyikDB::insertWords(const QList<AyikWord>& wlist)
 {
     QString err="";
     QStringList sqlstr;
     for(int i=0;i<wlist.size();i++) {
-        ayikWord w = wlist.at(i);
+        AyikWord w = wlist.at(i);
         sqlstr.append( "INSERT INTO words(tag,name,meaning,rating) VALUES("
                   "'"+w.getTag()+"',"
                   "'"+w.getName()+"',"
@@ -197,7 +186,7 @@ void ayikDB::insertWords(const QList<ayikWord>& wlist)
     }
 }
 
-void ayikDB::deleteWord(const ayikWord& w,QString &err)
+void AyikDB::deleteWord(const AyikWord& w,QString &err)
 {
     err="";
     QueryResult res;
@@ -206,13 +195,13 @@ void ayikDB::deleteWord(const ayikWord& w,QString &err)
         err = db->error();
     }
 }
-/*void ayikDB::deleteWords(const QList<ayikWord>& wlist,QString &err)
+/*void AyikDB::deleteWords(const QList<AyikWord>& wlist,QString &err)
 {
     err="";
     QString sqlstr;
     sqlstr = "DELETE FROM words WHERE name in (";
     for(int i=0;i<wlist.size();i++) {
-        ayikWord w = wlist.at(i);
+        AyikWord w = wlist.at(i);
         sqlstr += "'"+w.getName()+"',";
     }
     sqlstr += "'')";
@@ -224,12 +213,12 @@ void ayikDB::deleteWord(const ayikWord& w,QString &err)
         qDebug()<<err;
     }
 }*/
-void ayikDB::deleteWords(const QList<ayikWord>& wlist,QString &err)
+void AyikDB::deleteWords(const QList<AyikWord>& wlist,QString &err)
 {
     err="";
     QStringList sqlstr;
     for(int i=0;i<wlist.size();i++) {
-        ayikWord w = wlist.at(i);
+        AyikWord w = wlist.at(i);
         sqlstr.append("DELETE FROM words WHERE name='"+w.getName()+"'");
     }
     QueryResult res;
@@ -239,7 +228,18 @@ void ayikDB::deleteWords(const QList<ayikWord>& wlist,QString &err)
         qDebug()<<err;
     }
 }
-void ayikDB::updateWord(const ayikWord& w)
+void AyikDB::deleteWordsLike(const QString& filter,QString &err) {
+    err="";
+    QStringList sqlstr;
+    sqlstr.append("DELETE FROM words WHERE name like '%"+filter+"%'");
+    QueryResult res;
+    if(db->execute(sqlstr)==0) {
+    } else {
+        err = db->error();
+        qDebug()<<err;
+    }
+}
+void AyikDB::updateWord(const AyikWord& w)
 {
     QString err="";
     QString sqlstr;
@@ -256,10 +256,10 @@ void ayikDB::updateWord(const ayikWord& w)
         qDebug()<<err;
     }
 }
-void ayikDB::testDb()
+void AyikDB::testDb()
 {
     createDbTables();
-    ayikWord w1("insane","deli","4");
+    AyikWord w1("insane","deli","4");
     insertWord(w1);
     insertWord(w1);
     insertWord(w1);
@@ -271,14 +271,14 @@ void ayikDB::testDb()
                 << query.value(2).toString();
     }
 }
-void ayikDB::truncateWords()
+void AyikDB::truncateWords()
 {
     createDbTables();
     QSqlQuery query;
     query.exec("DELETE FROM words");
     ERRCHK(query);
 }
-void ayikDB::getRandomWordMemdb(ayikWord& w,const QString& tag,const QString& rating,const QString& ratingOperator,QString &err)
+void AyikDB::getRandomWord(AyikWord& w,const QString& tag,const QString& rating,const QString& ratingOperator,QString &err)
 {
     err="";
     QueryResult res;
@@ -300,7 +300,7 @@ void ayikDB::getRandomWordMemdb(ayikWord& w,const QString& tag,const QString& ra
         err = db->error();
     }
 }
-void ayikDB::getWordMemdb(ayikWord& w,const QString& name,QString &err)
+void AyikDB::getWord(AyikWord& w,const QString& name,QString &err)
 {
     err="";
     QueryResult res;
@@ -321,7 +321,7 @@ void ayikDB::getWordMemdb(ayikWord& w,const QString& name,QString &err)
         err = db->error();
     }
 }
-void ayikDB::getWordList(QueryResult &res,QString &err)
+void AyikDB::getWordList(QueryResult &res,QString &err)
 {
     err="";
     if(db->execute("SELECT tag,name,rating,meaning FROM words ORDER BY name DESC",res)==0);
@@ -330,7 +330,7 @@ void ayikDB::getWordList(QueryResult &res,QString &err)
     }
 }
 
-void ayikDB::addWords(const QString& filename,const QString& tag,const QString& rating)
+void AyikDB::addWords(const QString& filename,const QString& tag,const QString& rating)
 {
     QFile file(filename);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -339,34 +339,37 @@ void ayikDB::addWords(const QString& filename,const QString& tag,const QString& 
     QTextStream in(&file);
     QString text = in.readAll();
     QStringList lines = text.split("\n");
-    QProgressDialog pd("Adding..", "Cancel", 0, lines.size());
-    pd.setWindowModality(Qt::WindowModal);
+    QProgressDialog progressDialog("Adding..", "Cancel", 0, lines.size());
+    progressDialog.setWindowModality(Qt::WindowModal);
     int steps=0;
-    QList<ayikWord> wordlist;
+    QList<AyikWord> wordList;
     for(int i=0;i<lines.size();i++) {
-        if (pd.wasCanceled()) break;
+        if (progressDialog.wasCanceled()) break;
         QString line = lines.at(i);
-        QStringList list1 = line.split("=");
-        if(list1.length() > 1) {
-            ayikWord a_word(list1.at(0),list1.at(1),rating,tag);
-            wordlist.append(a_word);
+        QStringList splittedStringList = line.split("=");//word=meaning
+        if(splittedStringList.length() > 1) {
+            AyikWord ayikWord(splittedStringList.at(0),splittedStringList.at(1),rating,tag);
+            wordList.append(ayikWord);
+        } else if(splittedStringList.length() > 0) {
+            AyikWord ayikWord(splittedStringList.at(0),"",rating,tag);
+            wordList.append(ayikWord);
         }
-        if(wordlist.size()>50) {
-            insertWords(wordlist);
-            steps+=wordlist.size();
-            wordlist.clear();
-            pd.setValue(steps);
+        if(wordList.size()>50) {
+            insertWords(wordList);
+            steps+=wordList.size();
+            wordList.clear();
+            progressDialog.setValue(steps);
         }
     }
-    if(wordlist.size()>0) {
-        insertWords(wordlist);
-        steps+=wordlist.size();
-        wordlist.clear();
-        pd.setValue(steps);
+    if(wordList.size()>0) {
+        insertWords(wordList);
+        steps+=wordList.size();
+        wordList.clear();
+        progressDialog.setValue(steps);
     }
 }
 
-void ayikDB::getTagList(QStringList &list,QString &err)
+void AyikDB::getTagList(QStringList &list,QString &err)
 {
     err="";
     QueryResult res;

@@ -36,11 +36,11 @@ int main(int argc, char *argv[])
     translator.load("AYIKtr_la");
     a.installTranslator(&translator);
 
-    ayikTray *tray = ayikTray::getInstance();
+    AyikTray *tray = AyikTray::getInstance();
     tray->setVisible(true);
 
-    ayikOption::getInstance();//dummy call to initialize
-    ayikOption::getInstance()->postInit();
+    AyikOption::getInstance();//dummy call to initialize
+    AyikOption::getInstance()->postInit();
 
     return a.exec();
 }

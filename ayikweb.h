@@ -1,28 +1,33 @@
 #ifndef AYIKWEB_H
 #define AYIKWEB_H
 
+#include "ayikword.h"
 #include <QtGui>
+#include <QSslSocket>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
 
-class ayikWeb : public QThread
+class AyikWeb : public QObject
 {
     Q_OBJECT
 
 public:
-    ayikWeb(QObject *parent = 0);
-    void run();
-    void lookupWord(QString word);
-    QString getAnswer();
-
+    AyikWeb(QObject *parent = 0);
+    QString getLastWordMeaning();
+    void lookupWordMeaning(AyikWord ayikWord);
 private:
     QString targetWord;
-    QString answer;
-    QMutex mutex;
-
+    AyikWord lastAyikWord;
+    QString lastWordMeaning;
+    QString lastHttpResponse;
+    QNetworkAccessManager* networkAccessManager;
+    void lookupWordMeaningFromSeslisozluk(AyikWord ayikWord);
 signals:
     void lookupDone();
 
 public slots:
-
+private slots:
+    void onFinished(QNetworkReply* reply);
 };
 
 #endif // AYIKWEB_H

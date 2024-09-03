@@ -3,8 +3,6 @@
 #define DATABASECONNECTION_H
 
 #include <QtSql>
-#include <iostream>
-using namespace std;
 
 /* Change these to match your database */
 #define HOST   "TEST"

@@ -5,7 +5,6 @@ TableView::TableView()
     model = new TableModel();
     view = new QTableView;
 
-
     proxyModel = new QSortFilterProxyModel(view);
     proxyModel->setSourceModel(model);
     proxyModel->setDynamicSortFilter(true);

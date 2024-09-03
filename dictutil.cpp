@@ -2,45 +2,37 @@
 #include <QTcpSocket>
 #include <QtGui>
 #include <QTextCodec>
+#include <QSslSocket>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
 
-QString dictutil::parse_zargan(const QString& content) {
-
-    const QString delimStartWord="class=\"fi\">";
-    const QString delimStartMeaning="class=\"se\">";
-    const QString delimEnd="<a";
-    QString ret="<table cellspacing=0 cellpadding=2>";
-    int fromIndex=0;
-    while(true) {
-        int indexWord = content.indexOf(delimStartWord,fromIndex);
-        if(indexWord < 0) break;
-        int toIndexWord = content.indexOf(delimEnd,indexWord);
-        if(toIndexWord < 0) break;
-        QString word = content.mid(indexWord+delimStartWord.length(),toIndexWord-indexWord-delimStartWord.length());
-
-        int indexMeaning = content.indexOf(delimStartMeaning,fromIndex);
-        if(indexMeaning < 0) break;
-        int toIndexMeaning = content.indexOf(delimEnd,indexMeaning);
-        if(toIndexMeaning < 0) break;
-        QString meaning = content.mid(indexMeaning+delimStartMeaning.length(),toIndexMeaning-indexMeaning-delimStartMeaning.length());
-        //ret += "<tr><td>"+word+":</td><td>"+meaning+"</td></tr>";
-        ret += "<tr><td>"+word+": "+meaning+"</td></tr>";
-        fromIndex = toIndexMeaning;
+QString DictUtil::getUrlContent(const QString& strhost,const QString& strpath,const QString& encoding) {
+    //QTcpSocket socket;
+    QSslSocket socket;
+    socket.connectToHostEncrypted(strhost, 443);
+    if (!socket.waitForEncrypted()) {
+        qDebug() << "Failed to connect to host securely:" << socket.errorString();
+        return "";
     }
-    return "</table>"+ret;
-}
-QString dictutil::getUrlContent(const QString& strhost,const QString& strpath,const QString& encoding) {
+    QByteArray request;    
+    request.append(QString("GET "+strpath+" HTTP/1.1\r\n").toUtf8());
+    request.append(QString("Host: "+strhost+"\r\n").toUtf8());
+    request.append("Connection: close\r\n\r\n");
 
-    QTcpSocket socket;
-    socket.connectToHost(strhost,80);
-    QString req="GET "+ strpath +" HTTP/1.1\r\n"
-                "Host: "+ strhost +"\r\n\r\n";
-    socket.write(req.toStdString().c_str());
-    QByteArray buffer;
-    while (true) {
-        bool r = socket.waitForReadyRead(3000);
-        if(r==false) break;        
-        buffer += socket.readAll();
+    socket.write(request);
+    socket.flush();
+    QByteArray buffer;    
+    if (!socket.waitForReadyRead()) {
+        qDebug() << "Failed to receive a response:" << socket.errorString();
+        return "";
     }
+
+    while (socket.bytesAvailable()) {
+        buffer.append(socket.readAll());
+        qDebug() << buffer;
+    }
+
+    socket.disconnectFromHost();
     //QTextCodec *codec = QTextCodec::codecForName("ISO8859-9");
     //QTextCodec *codec = QTextCodec::codecForName("UTF-8");
     QTextCodec *codec = QTextCodec::codecForName(encoding.toStdString().c_str());
@@ -49,37 +41,10 @@ QString dictutil::getUrlContent(const QString& strhost,const QString& strpath,co
     return content;
 }
 
-QString dictutil::parse_seslisozluk_bna(const QString& content) {
-
-    const QString ref = "ne ar";
-    const QString endRef = "<br/>";
-    const QString delimStart="\">";
-    const QString delimEnd="</a>";
-    QString ret="";
-    int fromIndex=0;
-    int endIndex = 0;
-    fromIndex = content.indexOf(ref,fromIndex);
-    if(fromIndex > 0) fromIndex = fromIndex + ref.length() + 30;//30 ne?
-    else return ret;
-    endIndex = content.indexOf(endRef,fromIndex);
-    while(true) {
-        int index = content.indexOf(delimStart,fromIndex);
-        if( (index < 0) || (index >= endIndex) ) break;
-        int toIndex = content.indexOf(delimEnd,index);
-        if(toIndex < 0) break;
-        QString meaning = content.mid(index+delimStart.length(),toIndex-index-delimStart.length());
-        ret += meaning + "\n";
-        fromIndex = toIndex;
-    }
-
-    return ret;
-}
-
-
-QString dictutil::parse_seslisozluk(const QString& content) {
+QString DictUtil::parseSeslisozluk(const QString& content) {
 
     //const QString selector = "a.definition-link";//$("a.definition-link")[0].innerText
-    static const QRegularExpression REGEX_SESLISOZLUK(R"(<a class="definition-link".*>(.*)<\/a>)");
+    static const QRegularExpression REGEX_SESLISOZLUK(R"(<a class="definition-link".*?>(.*?)<\/a>)");
     QRegularExpressionMatchIterator i = REGEX_SESLISOZLUK.globalMatch(content);
 
     QString ret="";
@@ -88,13 +53,13 @@ QString dictutil::parse_seslisozluk(const QString& content) {
         QRegularExpressionMatch match = i.next();
         QString matchedText = match.captured(1); // captured(1) refers to the content inside the parentheses
         qDebug() << "Matched text:" << matchedText;
-        ret += matchedText+"\n";
+        ret += matchedText+"<br>";
     }
 
     return ret;
 }
 
-void dictutil::randomSequence(int seq[], int size) {
+void DictUtil::randomSequence(int seq[], int size) {
 
     //init seq
     for(int i=0;i<size;i++) {
@@ -112,7 +77,7 @@ void dictutil::randomSequence(int seq[], int size) {
     }
 }
 
-void dictutil::randomSequence(QList<int>& seq, int N) {
+void DictUtil::randomSequence(QList<int>& seq, int N) {
 
     seq.clear();
 

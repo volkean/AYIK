@@ -1,17 +1,18 @@
 #include "ayiktray.h"
 #include "ayikoption.h"
+#include "ayikpopup.h"
 #include <QtWidgets/QMenu>
 
-ayikTray* ayikTray::instance;
+AyikTray* AyikTray::instance;
 
-ayikTray::ayikTray()
+AyikTray::AyikTray()
 {
     createActions();
     createTrayIcon();
 
-    ayikPopup* popup = ayikPopup::getInstance();
+    AyikPopup* popup = AyikPopup::getInstance();
 
-    connect(popup, SIGNAL(window_hidden()), this, SLOT(startMessageTimer()));
+    connect(popup, SIGNAL(windowHidden()), this, SLOT(startMessageTimer()));
     connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
              this, SLOT(iconActivated(QSystemTrayIcon::ActivationReason)));
     connect(&timer,SIGNAL(timeout()),this,SLOT(showMessage()));
@@ -20,35 +21,35 @@ ayikTray::ayikTray()
 
     timer.start(2000);//first message after 2 secs
 }
-ayikTray* ayikTray::getInstance()
+AyikTray* AyikTray::getInstance()
 {
-    if(instance==NULL) instance = new ayikTray();
+    if(instance==NULL) instance = new AyikTray();
     return instance;
 }
-void ayikTray::setVisible(bool visible)
+void AyikTray::setVisible(bool visible)
 {
     trayIcon->setVisible(visible);
 }
-void ayikTray::showSetup()
+void AyikTray::showSetup()
 {
-    ayikOption* options = ayikOption::getInstance();
+    AyikOption* options = AyikOption::getInstance();
     //setupAction->setEnabled( !(options->isVisible()) );
     options->setVisible(true);
 }
-void ayikTray::startMessageTimer() {
-    ayikOption* options = ayikOption::getInstance();
+void AyikTray::startMessageTimer() {
+    AyikOption* options = AyikOption::getInstance();
     timer.start(options->getMessageFrequency()*60000);//convert into mins -- 60*1000 = 60 sec * 1000 msec
 }
-void ayikTray::showMessage()
+void AyikTray::showMessage()
 {
     timer.stop();
-    ayikPopup::getInstance()->showPopup();
+    AyikPopup::getInstance()->showPopup();
 }
-void ayikTray::showHelp()
+void AyikTray::showHelp()
 {
-    ayikOption::getInstance()->showHelp();
+    AyikOption::getInstance()->showHelp();
 }
-void ayikTray::createActions()
+void AyikTray::createActions()
 {
     setupAction = new QAction(tr("&Options"), this);
     connect(setupAction, SIGNAL(triggered()), this, SLOT(showSetup()));
@@ -59,7 +60,7 @@ void ayikTray::createActions()
     quitAction = new QAction(tr("&Quit"), this);
     connect(quitAction, SIGNAL(triggered()), qApp, SLOT(quit()));
 }
-void ayikTray::createTrayIcon()
+void AyikTray::createTrayIcon()
 {
     trayIconMenu = new QMenu(this);
     trayIconMenu->addAction(setupAction);
@@ -71,7 +72,7 @@ void ayikTray::createTrayIcon()
     trayIcon->setToolTip("AYIK");
     trayIcon->setContextMenu(trayIconMenu);
 }
- void ayikTray::iconActivated(QSystemTrayIcon::ActivationReason reason)
+ void AyikTray::iconActivated(QSystemTrayIcon::ActivationReason reason)
  {
      switch (reason) {
      case QSystemTrayIcon::Trigger:

@@ -6,17 +6,18 @@
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QInputDialog>
 #include <QtWidgets/QProgressDialog>
+#include <QtWidgets/QLabel>
 
-ayikOption* ayikOption::instance;
+AyikOption* AyikOption::instance;
 
-ayikOption::ayikOption()
+AyikOption::AyikOption()
 {
     init();
 }
-void ayikOption::init()
+void AyikOption::init()
 {
 }
-void ayikOption::postInit()
+void AyikOption::postInit()
 {
     tableHeaders<<tr("Tag")<<tr("Name")<<tr("Rating")<<tr("Meaning");
     ratingLevels<<"1"<<"2"<<"3"<<"4"<<"5";
@@ -69,7 +70,7 @@ void ayikOption::postInit()
     group_src_hist = new QGroupBox(tr("Word Level"));
 
     //-- history
-    rating = new ayikRating(false,true,1,5);
+    rating = new AyikRating(false,true,1,5);
     QLabel *lbl_rating = new QLabel(tr("Level"));
     cmb_rating_oper = new QComboBox();
     QStringList items_rating;
@@ -93,6 +94,7 @@ void ayikOption::postInit()
 
     btn_add_file = new QPushButton(tr("Add..."));
     btn_delete_word = new QPushButton(tr("Delete"));
+    btn_delete_all = new QPushButton(tr("Delete All"));
     lineedit_word_filter = new QLineEdit();
     tableview = new TableView();
 
@@ -104,6 +106,7 @@ void ayikOption::postInit()
     QHBoxLayout *wwbtnlayout = new QHBoxLayout();
     wwbtnlayout->addWidget(btn_add_file);
     wwbtnlayout->addWidget(btn_delete_word);
+    wwbtnlayout->addWidget(btn_delete_all);
     wwbtnlayout->addStretch();
 
     QHBoxLayout *wwfilterlayout = new QHBoxLayout();
@@ -142,16 +145,16 @@ void ayikOption::postInit()
     createActions();
 
 }
-ayikOption* ayikOption::getInstance()
+AyikOption* AyikOption::getInstance()
 {
-    if(instance==NULL) instance = new ayikOption();
+    if(instance==NULL) instance = new AyikOption();
     return instance;
 }
-int ayikOption::getMessageFrequency() {
+int AyikOption::getMessageFrequency() {
     QString siklik = cmb_freq->currentText();
     return siklik.toInt();
 }
-QString ayikOption::getTag()
+QString AyikOption::getTag()
 {
     QString tag="";
     /*if(cmb_tag->currentIndex()>0) {
@@ -161,19 +164,20 @@ QString ayikOption::getTag()
     if(tag == tagAllWords) tag="";
     return tag;
 }
-QString ayikOption::getRating()
+QString AyikOption::getRating()
 {
     return rating->getRating();
 }
-QString ayikOption::getRatingOperator()
+QString AyikOption::getRatingOperator()
 {
     QString ratingoper = cmb_rating_oper->currentText();
     return ratingoper;
 }
-void ayikOption::createActions()
+void AyikOption::createActions()
 {
     connect(btn_add_file,SIGNAL(clicked()),this,SLOT(slot_add_file()));
     connect(btn_delete_word,SIGNAL(clicked()),this,SLOT(slot_delete_word()));
+    connect(btn_delete_all,SIGNAL(clicked()),this,SLOT(slot_delete_all()));
     //connect(cmb_tag,SIGNAL(clicked()),this,SLOT(slot_add_file()));//todo
     connect(tableview->getView()->selectionModel(),SIGNAL(currentRowChanged(const QModelIndex&,const QModelIndex&)),this,SLOT(slot_word_selected(const QModelIndex&,const QModelIndex&)));
     connect(txt_meaning,SIGNAL(textChanged()),this,SLOT(slot_txt_meaning_changed()));
@@ -182,22 +186,21 @@ void ayikOption::createActions()
     connect(tagslist,SIGNAL(itemClicked(QListWidgetItem*)),this,SLOT(slot_tagChosen(QListWidgetItem*)));
 
 }
-void ayikOption::closeEvent(QCloseEvent *event)
+void AyikOption::closeEvent(QCloseEvent *event)
 {
     //todo: save & load
     event->ignore();
     //    loadCheckedFileList();
     hide();
 }
-void ayikOption::loadWordsTable()
-{
-
+void AyikOption::loadWordsTable()
+{    
     tableview->model->clear();
     tableview->model->setHeaders(tableHeaders);
 
     QString err;
     QueryResult res;
-    ayikDB *db = ayikDB::getInstance();
+    AyikDB *db = AyikDB::getInstance();
     db->getWordList(res,err);
     if(err != "") qDebug()<<err;
 
@@ -211,7 +214,7 @@ void ayikOption::loadWordsTable()
     }
 }
 
-void ayikOption::slot_add_file()
+void AyikOption::slot_add_file()
 {
     QString fileName = QFileDialog::getOpenFileName(this,tr("Open Words File"), "", tr("Text Files (*.txt)"));
     if(fileName!="") {
@@ -223,39 +226,39 @@ void ayikOption::slot_add_file()
             if (ratingOk && !rating.isEmpty()) {
                 //qDebug()<<fileName<<tag<<rating;
                 //QMessageBox::information(0,"info",fileName+" "+tag+" "+rating);
-                ayikDB::getInstance()->addWords(fileName,tag,rating);
+                AyikDB::getInstance()->addWords(fileName,tag,rating);
                 loadWordsTable();//reload list
             }
         }
     }
 }
 
-void ayikOption::slot_delete_word()
+void AyikOption::slot_delete_word()
 {
     QString err;
     QModelIndexList selection = tableview->getView()->selectionModel()->selectedRows(1);
     QProgressDialog pd(tr("Deleting.."), tr("Cancel"), 0, selection.size());
     pd.setWindowModality(Qt::WindowModal);
     int steps=0;
-    QList<ayikWord> wordlist;
+    QList<AyikWord> wordlist;
     for(int i=selection.size() - 1;i >=0 ;i--) {
         if (pd.wasCanceled()) break;
         QModelIndex proxyIndex = selection.at(i);
         QModelIndex index = tableview->proxyModel->mapToSource(proxyIndex);
 
         QString name = tableview->model->data(index,Qt::EditRole).toString();
-        ayikWord w;
+        AyikWord w;
         w.setName(name);
         wordlist.append(w);
         if(wordlist.size()>50) {
-            ayikDB::getInstance()->deleteWords(wordlist,err);
+            AyikDB::getInstance()->deleteWords(wordlist,err);
             steps+=wordlist.size();
             wordlist.clear();
             pd.setValue(steps);
         }
     }
     if(wordlist.size()>0) {
-        ayikDB::getInstance()->deleteWords(wordlist,err);
+        AyikDB::getInstance()->deleteWords(wordlist,err);
         steps+=wordlist.size();
         wordlist.clear();
         pd.setValue(steps);
@@ -263,60 +266,67 @@ void ayikOption::slot_delete_word()
     loadWordsTable();//reload list
 }
 
-void ayikOption::slot_word_selected(const QModelIndex &current,const QModelIndex &previous)
+void AyikOption::slot_delete_all()
+{
+    QString err;
+    AyikDB::getInstance()->deleteWordsLike(lineedit_word_filter->text(), err);
+    loadWordsTable();//reload list
+}
+
+void AyikOption::slot_word_selected(const QModelIndex &current,const QModelIndex &previous)
 {
     QModelIndex currIndex = tableview->proxyModel->mapToSource(current);
     QModelIndex prevIndex = tableview->proxyModel->mapToSource(previous);
     if(prevIndex.isValid() && txt_meaning_changed) {
         txt_meaning_changed=false;
         QString prevwordname = tableview->model->getValue(prevIndex.row(),1);
-        ayikWord prevword;
+        AyikWord prevword;
         QString preverr;
-        ayikDB::getInstance()->getWordMemdb(prevword,prevwordname,preverr);
+        AyikDB::getInstance()->getWord(prevword,prevwordname,preverr);
         if(txt_meaning->toPlainText().isEmpty()) prevword.setMeaning("");
         else prevword.setMeaning(txt_meaning->toHtml());
-        ayikDB::getInstance()->updateWord(prevword);
+        AyikDB::getInstance()->updateWord(prevword);
         tableview->model->setValue(previous.row(),3,prevword.getMeaning());
     }
     if(currIndex.isValid()) {
         QString currwordname = tableview->model->getValue(currIndex.row(),1);
         QString currwordmeaning = tableview->model->getValue(currIndex.row(),3);
-        ayikWord currword;
+        AyikWord currword;
         QString currerr;
-        ayikDB::getInstance()->getWordMemdb(currword,currwordname,currerr);
+        AyikDB::getInstance()->getWord(currword,currwordname,currerr);
         currwordmeaning = currword.getMeaning();
         txt_meaning->setHtml(currwordmeaning);
     }
 }
-void ayikOption::slot_txt_meaning_changed()
+void AyikOption::slot_txt_meaning_changed()
 {
     txt_meaning_changed=true;
 }
-void ayikOption::slot_filterTextChanged(const QString& text)
+void AyikOption::slot_filterTextChanged(const QString& text)
 {
     tableview->proxyModel->setFilterWildcard(text);
 }
 
-void ayikOption::showHelp()
+void AyikOption::showHelp()
 {
     tabs->setCurrentIndex(2);
     setVisible(true);
 }
-void ayikOption::slot_chooseTag()
+void AyikOption::slot_chooseTag()
 {
     reloadTagList();
     tagslist->setVisible(true);
 }
-void ayikOption::reloadTagList()
+void AyikOption::reloadTagList()
 {
     QStringList items_tag;
     QString err;
-    ayikDB::getInstance()->getTagList(items_tag,err);//todo: err check
+    AyikDB::getInstance()->getTagList(items_tag,err);//todo: err check
     items_tag.push_front(tagAllWords);
     tagslist->clear();
     tagslist->addItems(items_tag);
 }
-void ayikOption::slot_tagChosen(QListWidgetItem * item)
+void AyikOption::slot_tagChosen(QListWidgetItem * item)
 {
     lineedit_tag->setText(item->text());
     tagslist->setVisible(false);

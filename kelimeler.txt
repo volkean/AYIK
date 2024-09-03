@@ -1,2 +1,5 @@
 wide=genis
 silent=sessiz
+barge=
+flood=
+freight=

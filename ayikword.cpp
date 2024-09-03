@@ -1,9 +1,9 @@
 #include "ayikword.h"
 
-ayikWord::ayikWord()
+AyikWord::AyikWord()
 {
 }
-ayikWord::ayikWord(const QString& name,const QString& meaning,const QString& rating,const QString& tag)
+AyikWord::AyikWord(const QString& name,const QString& meaning,const QString& rating,const QString& tag)
 {
     this->name=name;
     this->meaning=meaning;
@@ -11,35 +11,35 @@ ayikWord::ayikWord(const QString& name,const QString& meaning,const QString& rat
     this->tag=tag;
 }
 
-QString ayikWord::getName() const
+QString AyikWord::getName() const
 {
     return name;
 }
-QString ayikWord::getMeaning() const
+QString AyikWord::getMeaning() const
 {
     return meaning;
 }
-QString ayikWord::getRating() const
+QString AyikWord::getRating() const
 {
     return rating;
 }
-QString ayikWord::getTag() const
+QString AyikWord::getTag() const
 {
     return tag;
 }
-void ayikWord::setName(const QString& name)
+void AyikWord::setName(const QString& name)
 {
     this->name=name;
 }
-void ayikWord::setMeaning(const QString& meaning)
+void AyikWord::setMeaning(const QString& meaning)
 {
     this->meaning=meaning;
 }
-void ayikWord::setRating(const QString& rating)
+void AyikWord::setRating(const QString& rating)
 {
     this->rating=rating;
 }
-void ayikWord::setTag(const QString& tag)
+void AyikWord::setTag(const QString& tag)
 {
     this->tag=tag;
 }

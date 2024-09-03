@@ -3,15 +3,15 @@
 
 #include <QtWidgets/QWidget>
 
-class starrating : public QWidget
+class StarRating : public QWidget
 {
     Q_OBJECT
 
 public:
     enum EditMode { Editable, ReadOnly };
 
-    starrating(QWidget *parent = 0);
-    starrating(int starCount = 1, int maxStarCount = 5);
+    StarRating(QWidget *parent = 0);
+    StarRating(int starCount = 1, int maxStarCount = 5);
 
     void paint(QPainter *painter, const QRect &rect,
                const QPalette &palette, EditMode mode) const;
@@ -39,8 +39,6 @@ private:
     QPolygonF diamondPolygon;
     int myStarCount;
     int myMaxStarCount;
-
-
 };
 
 #endif // STARRATING_H

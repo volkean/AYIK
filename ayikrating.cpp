@@ -1,20 +1,20 @@
 #include "ayikrating.h"
 
-ayikRating::ayikRating(bool chk,bool rateable,int min,int max)
+AyikRating::AyikRating(bool chk,bool rateable,int min,int max)
 {
     layout = new QHBoxLayout(this);
     if(chk) {
-        chkbox = new QCheckBox();
-        layout->addWidget(chkbox);
+        checkBox = new QCheckBox();
+        layout->addWidget(checkBox);
     }
-    rating = new starrating(min,max);
+    rating = new StarRating(min,max);
     rating->setEditable(rateable);
     layout->addWidget(rating);
     layout->addStretch();
 }
 
-QString ayikRating::getRating()
+QString AyikRating::getRating()
 {
-    int starcount = rating->starCount();
-    return QString::number(starcount);
+    int starCount = rating->starCount();
+    return QString::number(starCount);
 }

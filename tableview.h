@@ -3,7 +3,6 @@
 
 #include <QtGui>
 #include "tablemodel.h"
-#include "itemdelegate.h"
 #include <QtWidgets/QTableView>
 #include <QtWidgets/QHeaderView>
 

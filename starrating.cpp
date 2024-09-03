@@ -5,11 +5,11 @@
 
 const int PaintingScaleFactor = 20;
 
-starrating::starrating(QWidget *parent) : QWidget(parent)
+StarRating::StarRating(QWidget *parent) : QWidget(parent)
 {
 
 }
-starrating::starrating(int starCount, int maxStarCount)
+StarRating::StarRating(int starCount, int maxStarCount)
 {
     myStarCount = starCount;
     myMaxStarCount = maxStarCount;
@@ -26,17 +26,17 @@ starrating::starrating(int starCount, int maxStarCount)
 
 }
 
-QSize starrating::sizeHint() const
+QSize StarRating::sizeHint() const
 {
     return PaintingScaleFactor * QSize(myMaxStarCount, 1);
 }
 
-void starrating::paintEvent(QPaintEvent *)
+void StarRating::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
     paint(&painter, rect(), this->palette(),mode);
 }
-void starrating::paint(QPainter *painter, const QRect &rect,
+void StarRating::paint(QPainter *painter, const QRect &rect,
                        const QPalette &palette, EditMode mode) const
 {
     painter->save();
@@ -65,7 +65,7 @@ void starrating::paint(QPainter *painter, const QRect &rect,
 
     painter->restore();
 }
-void starrating::mouseMoveEvent(QMouseEvent *event)
+void StarRating::mouseMoveEvent(QMouseEvent *event)
 {
     int star = starAtPosition(event->x());
 
@@ -75,11 +75,11 @@ void starrating::mouseMoveEvent(QMouseEvent *event)
     }
 }
 
-void starrating::mouseReleaseEvent(QMouseEvent * /* event */)
+void StarRating::mouseReleaseEvent(QMouseEvent * /* event */)
 {
     //emit editingFinished();
 }
-void starrating::mousePressEvent(QMouseEvent *event)
+void StarRating::mousePressEvent(QMouseEvent *event)
 {
     int star = starAtPosition(event->x());
 
@@ -88,7 +88,7 @@ void starrating::mousePressEvent(QMouseEvent *event)
         update();
     }
 }
-int starrating::starAtPosition(int x)
+int StarRating::starAtPosition(int x)
 {
     int star = (x / (sizeHint().width()
                      / maxStarCount())) + 1;
@@ -97,7 +97,7 @@ int starrating::starAtPosition(int x)
 
     return star;
 }
-void starrating::setStarCount(int starCount)
+void StarRating::setStarCount(int starCount)
 {
     if(myStarCount != starCount) emit starCountChanged(starCount);
     myStarCount = starCount;
