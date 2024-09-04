@@ -2,21 +2,19 @@
 #define TABLEVIEW_H
 
 #include <QtGui>
-#include "tablemodel.h"
 #include <QtWidgets/QTableView>
 #include <QtWidgets/QHeaderView>
+#include <QSqlTableModel>
 
-class TableView
+class TableView : public QTableView
 {
-public:
-    TableView();
-    QTableView* getView();
-    void test();
+    Q_OBJECT
 
-    QTableView *view;
-    TableModel *model;
-    QSortFilterProxyModel *proxyModel;
-    //ItemDelegate *delegate;//not used yet
+public:
+    explicit TableView(QSqlDatabase &db);
+
+    QSqlTableModel *model;
+    // QSortFilterProxyModel *proxyModel;
 };
 
 #endif // TABLEVIEW_H

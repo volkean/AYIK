@@ -7,7 +7,13 @@
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
-#include "databaseconnection.h"
+#include <QSqlRecord>
+
+class QueryResult {
+public:
+    QList<QString> headers;
+    QList< QList<QString> > records;
+};
 
 class AyikDB : public QObject
 {
@@ -38,10 +44,18 @@ public:
     void truncateWords();
     void testDb();
 
+
+    int connect();
+    int execute(const QString& sqlstr, QueryResult& qr);
+    int execute(const QStringList& sqlstr);
+    /*int update(QString &sqlstr);*/
+    QString error();
+
+    QSqlDatabase db;
+    QString errstr;
+
 private:
     static AyikDB* instance;
-
-    DatabaseConnection *db;
 
     QList<AyikWord> words;
     QList<int> seq;//random sequence

@@ -18,9 +18,6 @@ SOURCES += main.cpp \
     ayikword.cpp \
     ayikrating.cpp \
     tableview.cpp \
-    tablemodel.cpp \
-    itemdelegate.cpp \
-    databaseconnection.cpp \
     ayikweb.cpp \
     loadingwidget.cpp
 HEADERS += ayiktray.h \
@@ -31,10 +28,7 @@ HEADERS += ayiktray.h \
     ayikpopup.h \
     ayikword.h \
     ayikrating.h \
-    tablemodel.h \
-    itemdelegate.h \
     tableview.h \
-    databaseconnection.h \
     ayikweb.h \
     loadingwidget.h
 FORMS += 

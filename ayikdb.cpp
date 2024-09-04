@@ -12,11 +12,8 @@ AyikDB* AyikDB::instance;
 
 AyikDB::AyikDB()
 {
-    db = new DatabaseConnection("ayik.sqlite","QSQLITE");
-    db->setConnectionParams("","","","","ayik.sqlite");
     instance = this;
-
-    db->connect();
+    connect();
     createDbTables();
 }
 AyikDB* AyikDB::getInstance()
@@ -119,7 +116,7 @@ void AyikDB::regenerateShuffle()
 }
 void AyikDB::createDbTables()
 {
-    QSqlQuery query;
+    QSqlQuery query(db);
     query.exec("CREATE TABLE IF NOT EXISTS words ("
                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                "tag TEXT, "
@@ -129,11 +126,25 @@ void AyikDB::createDbTables()
                ")"
                );
     ERRCHK(query);
+    query.exec("CREATE TABLE IF NOT EXISTS config ("
+               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+               "name TEXT, "
+               "value TEXT"
+               ")"
+               );
+    ERRCHK(query);
+    query.exec("INSERT INTO words(tag,name,meaning,rating) SELECT 'example','awake','',5 "
+               "WHERE NOT EXISTS (SELECT 1 FROM config)"
+               );
+    ERRCHK(query);
+    query.exec("INSERT INTO config(name,value) VALUES('example-loaded','true')"
+               );
+    ERRCHK(query);
 }
 void AyikDB::insertWord(const AyikWord& w)
 {
     createDbTables();
-    QSqlQuery query;
+    QSqlQuery query(db);
     query.exec("INSERT OR IGNORE INTO words(tag,name,meaning,rating) VALUES("
                "'"+w.getTag()+"',"
                "'"+w.getName()+"',"
@@ -151,7 +162,7 @@ void AyikDB::insertWord(const AyikWord& w)
     QString err="";
     QString sqlstr;
     QueryResult res;
-    db->execute("BEGIN TRANSACTION",res);
+    execute("BEGIN TRANSACTION",res);
     for(int i=0;i<wlist.size();i++) {
         AyikWord w = wlist.at(i);
         sqlstr = "INSERT INTO words(tag,name,meaning,rating) VALUES("
@@ -159,13 +170,13 @@ void AyikDB::insertWord(const AyikWord& w)
                   "'"+w.getName()+"',"
                   "'"+w.getMeaning()+"',"
                   "'"+w.getRating()+"')";
-        if(db->execute(sqlstr,res)==0) {
+        if(execute(sqlstr,res)==0) {
         } else {
-            err = db->error();
+            err = error();
             qDebug()<<err;
         }
     }
-    db->execute("END",res);
+    execute("END",res);
 }*/
 void AyikDB::insertWords(const QList<AyikWord>& wlist)
 {
@@ -179,9 +190,9 @@ void AyikDB::insertWords(const QList<AyikWord>& wlist)
                   "'"+w.getMeaning()+"',"
                   "'"+w.getRating()+"')");
     }
-    if(db->execute(sqlstr)==0) {
+    if(execute(sqlstr)==0) {
     } else {
-        err = db->error();
+        err = error();
         qDebug()<<err;
     }
 }
@@ -190,9 +201,9 @@ void AyikDB::deleteWord(const AyikWord& w,QString &err)
 {
     err="";
     QueryResult res;
-    if(db->execute("DELETE FROM words WHERE name='"+w.getName()+"'",res)==0) {
+    if(execute("DELETE FROM words WHERE name='"+w.getName()+"'",res)==0) {
     } else {
-        err = db->error();
+        err = error();
     }
 }
 /*void AyikDB::deleteWords(const QList<AyikWord>& wlist,QString &err)
@@ -207,9 +218,9 @@ void AyikDB::deleteWord(const AyikWord& w,QString &err)
     sqlstr += "'')";
     //qDebug()<<sqlstr;
     QueryResult res;
-    if(db->execute(sqlstr,res)==0) {
+    if(execute(sqlstr,res)==0) {
     } else {
-        err = db->error();
+        err = error();
         qDebug()<<err;
     }
 }*/
@@ -222,20 +233,20 @@ void AyikDB::deleteWords(const QList<AyikWord>& wlist,QString &err)
         sqlstr.append("DELETE FROM words WHERE name='"+w.getName()+"'");
     }
     QueryResult res;
-    if(db->execute(sqlstr)==0) {
+    if(execute(sqlstr)==0) {
     } else {
-        err = db->error();
+        err = error();
         qDebug()<<err;
     }
 }
 void AyikDB::deleteWordsLike(const QString& filter,QString &err) {
     err="";
     QStringList sqlstr;
-    sqlstr.append("DELETE FROM words WHERE name like '%"+filter+"%'");
+    sqlstr.append("DELETE FROM words WHERE tag like '%"+filter+"%' or name like '%"+filter+"%'");
     QueryResult res;
-    if(db->execute(sqlstr)==0) {
+    if(execute(sqlstr)==0) {
     } else {
-        err = db->error();
+        err = error();
         qDebug()<<err;
     }
 }
@@ -250,9 +261,9 @@ void AyikDB::updateWord(const AyikWord& w)
              "rating='"+w.getRating()+"' "
              "WHERE name='"+w.getName()+"'";
     QueryResult res;
-    if(db->execute(sqlstr,res)==0) {
+    if(execute(sqlstr,res)==0) {
     } else {
-        err = db->error();
+        err = error();
         qDebug()<<err;
     }
 }
@@ -287,7 +298,7 @@ void AyikDB::getRandomWord(AyikWord& w,const QString& tag,const QString& rating,
     where += "rating "+ratingOperator+" "+rating;
     QString sqlstr = "SELECT tag,name,meaning,rating FROM words"+where+" ORDER BY Random() LIMIT 1";
     //qDebug()<<sqlstr;
-    if(db->execute(sqlstr,res)==0) {
+    if(execute(sqlstr,res)==0) {
         for(int i=0;i<res.records.size();i++) {
             QList<QString> row = res.records.at(i);
             w.setTag(row.at(0));
@@ -297,7 +308,7 @@ void AyikDB::getRandomWord(AyikWord& w,const QString& tag,const QString& rating,
             break;
         }
     } else {
-        err = db->error();
+        err = error();
     }
 }
 void AyikDB::getWord(AyikWord& w,const QString& name,QString &err)
@@ -308,7 +319,7 @@ void AyikDB::getWord(AyikWord& w,const QString& name,QString &err)
     where += "name='"+name+"'";
     QString sqlstr = "SELECT tag,name,meaning,rating FROM words"+where+" LIMIT 1";
     //qDebug()<<sqlstr;
-    if(db->execute(sqlstr,res)==0) {
+    if(execute(sqlstr,res)==0) {
         for(int i=0;i<res.records.size();i++) {
             QList<QString> row = res.records.at(i);
             w.setTag(row.at(0));
@@ -318,15 +329,15 @@ void AyikDB::getWord(AyikWord& w,const QString& name,QString &err)
             break;
         }
     } else {
-        err = db->error();
+        err = error();
     }
 }
 void AyikDB::getWordList(QueryResult &res,QString &err)
 {
     err="";
-    if(db->execute("SELECT tag,name,rating,meaning FROM words ORDER BY name DESC",res)==0);
+    if(execute("SELECT tag,name,rating,meaning FROM words ORDER BY name DESC",res)==0);
     else {
-        err = db->error();
+        err = error();
     }
 }
 
@@ -373,11 +384,93 @@ void AyikDB::getTagList(QStringList &list,QString &err)
 {
     err="";
     QueryResult res;
-    if(db->execute("SELECT distinct(tag) FROM words",res)==0) {
+    if(execute("SELECT distinct(tag) FROM words",res)==0) {
         for(int i=0;i<res.records.size();i++) {
             list << res.records.at(i).at(0);
         }
     } else {
-        err = db->error();
+        err = error();
     }
+}
+
+
+int AyikDB::connect()
+{
+    errstr="";
+    if(!db.isOpen()) {
+        db = QSqlDatabase::addDatabase("QSQLITE", "ayik.sqlite");
+        db.setHostName("test");
+        db.setDatabaseName("ayik.sqlite");
+        db.setUserName("test");
+        db.setPassword("test");
+
+        if(!db.open() || db.isOpenError()) {
+            errstr = db.lastError().text();
+            qDebug()<<db.lastError()<<" "<<errstr;
+            return -1;
+        }
+    }
+    return 0;
+}
+
+int AyikDB::execute(const QString& sqlstr, QueryResult& qr)
+{
+    errstr="";
+    if(sqlstr.isEmpty()) {
+        errstr = "Empty sql statement";
+        return -1;
+    }
+    if(connect()==0) {
+        //db.transaction();
+        QSqlQuery query(db);
+        if (query.exec(sqlstr) == false) {
+            errstr = query.lastError().text();
+            return -1;
+        } else {
+
+            QSqlRecord rec = query.record();
+            for (int c = 0; c < rec.count(); c++) {
+                qr.headers.push_back(rec.fieldName(c));
+            }
+
+            while (query.next()) {
+                QList<QString> row;
+                for (int c = 0; c < rec.count(); c++) {
+                    row.push_back(query.value(c).toString());
+                }
+                qr.records.push_back(row);
+            }
+        }
+        //db.commit();
+    } else {//error
+        return -1;
+    }
+    return 0;
+}
+int AyikDB::execute(const QStringList& sqlstr) {
+    errstr="";
+    if(sqlstr.isEmpty()) {
+        errstr = "Empty sql statement";
+        return -1;
+    }
+    if(connect()==0) {
+        db.transaction();
+        QSqlQuery query(db);
+        for(int i=0;i<sqlstr.size();i++) {
+            if (query.exec(sqlstr.at(i)) == false) {
+                errstr = query.lastError().text();
+                return -1;
+            } else {
+            }
+        }
+        db.commit();
+    } else {//error
+        return -1;
+    }
+    return 0;
+}
+
+QString AyikDB::error()
+{
+    return errstr;
 }

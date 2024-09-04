@@ -1,5 +1,4 @@
 #include "ayikoption.h"
-#include "databaseconnection.h"
 #include <QFile>
 #include <QtWidgets/QSplitter>
 #include <QtWidgets/QDialog>
@@ -95,14 +94,27 @@ void AyikOption::postInit()
     btn_add_file = new QPushButton(tr("Add..."));
     btn_delete_word = new QPushButton(tr("Delete"));
     btn_delete_all = new QPushButton(tr("Delete All"));
+    btn_update_meaning = new QPushButton(QIcon(":/images/ok.png"),tr("Update"));
     lineedit_word_filter = new QLineEdit();
-    tableview = new TableView();
 
-    tableview->model->setHeaders(tableHeaders);
-    tableview->getView()->setColumnHidden(3,true);
+    db = AyikDB::getInstance()->db;
+
+    tableview = new TableView(db);
+    tableview->model->setTable("words");
+    tableview->model->select();
+
+    tableview->model->setHeaderData(0, Qt::Horizontal, QObject::tr("Id"));
+    tableview->model->setHeaderData(1, Qt::Horizontal, QObject::tr("Tag"));
+    tableview->model->setHeaderData(2, Qt::Horizontal, QObject::tr("Name"));
+    tableview->model->setHeaderData(3, Qt::Horizontal, QObject::tr("Meaning"));
+    tableview->model->setHeaderData(4, Qt::Horizontal, QObject::tr("Rating"));
+    //tableview->model->setHeaders(tableHeaders);
+    tableview->setColumnHidden(0,true);
+    tableview->setColumnHidden(3,true);
+    tableview->setColumnHidden(4,true);
+    tableview->setModel(tableview->model);
 
     txt_meaning = new QTextEdit();
-    loadWordsTable();
     QHBoxLayout *wwbtnlayout = new QHBoxLayout();
     wwbtnlayout->addWidget(btn_add_file);
     wwbtnlayout->addWidget(btn_delete_word);
@@ -117,8 +129,9 @@ void AyikOption::postInit()
     wwlayout->addLayout(wwbtnlayout);
     wwlayout->addLayout(wwfilterlayout);
     QSplitter *word_meaning_splitter = new QSplitter(Qt::Vertical,this);
-    word_meaning_splitter->addWidget(tableview->getView());
+    word_meaning_splitter->addWidget(tableview);
     word_meaning_splitter->addWidget(txt_meaning);
+    word_meaning_splitter->addWidget(btn_update_meaning);
 
     wwlayout->addWidget(word_meaning_splitter);
 
@@ -178,8 +191,9 @@ void AyikOption::createActions()
     connect(btn_add_file,SIGNAL(clicked()),this,SLOT(slot_add_file()));
     connect(btn_delete_word,SIGNAL(clicked()),this,SLOT(slot_delete_word()));
     connect(btn_delete_all,SIGNAL(clicked()),this,SLOT(slot_delete_all()));
+    connect(btn_update_meaning,SIGNAL(clicked()),this,SLOT(slot_update_meaning()));
     //connect(cmb_tag,SIGNAL(clicked()),this,SLOT(slot_add_file()));//todo
-    connect(tableview->getView()->selectionModel(),SIGNAL(currentRowChanged(const QModelIndex&,const QModelIndex&)),this,SLOT(slot_word_selected(const QModelIndex&,const QModelIndex&)));
+    connect(tableview->selectionModel(),SIGNAL(currentRowChanged(const QModelIndex&,const QModelIndex&)),this,SLOT(slot_word_selected(const QModelIndex&,const QModelIndex&)));
     connect(txt_meaning,SIGNAL(textChanged()),this,SLOT(slot_txt_meaning_changed()));
     connect(lineedit_word_filter,SIGNAL(textChanged(const QString&)),this,SLOT(slot_filterTextChanged(const QString&)));
     connect(btn_tag_select,SIGNAL(clicked()),this,SLOT(slot_chooseTag()));
@@ -192,26 +206,6 @@ void AyikOption::closeEvent(QCloseEvent *event)
     event->ignore();
     //    loadCheckedFileList();
     hide();
-}
-void AyikOption::loadWordsTable()
-{    
-    tableview->model->clear();
-    tableview->model->setHeaders(tableHeaders);
-
-    QString err;
-    QueryResult res;
-    AyikDB *db = AyikDB::getInstance();
-    db->getWordList(res,err);
-    if(err != "") qDebug()<<err;
-
-    for(int i=0;i<res.records.size();i++) {
-        tableview->model->insertRows(0, 1, QModelIndex());
-        QList<QString> row = res.records.at(i);
-        for(int j=0;j<row.size();j++) {
-            QModelIndex index = tableview->model->index(0, j, QModelIndex());
-            tableview->model->setData(index, row.at(j), Qt::EditRole);
-        }
-    }
 }
 
 void AyikOption::slot_add_file()
@@ -227,7 +221,7 @@ void AyikOption::slot_add_file()
                 //qDebug()<<fileName<<tag<<rating;
                 //QMessageBox::information(0,"info",fileName+" "+tag+" "+rating);
                 AyikDB::getInstance()->addWords(fileName,tag,rating);
-                loadWordsTable();//reload list
+                tableview->model->select();//reload list
             }
         }
     }
@@ -236,15 +230,14 @@ void AyikOption::slot_add_file()
 void AyikOption::slot_delete_word()
 {
     QString err;
-    QModelIndexList selection = tableview->getView()->selectionModel()->selectedRows(1);
+    QModelIndexList selection = tableview->selectionModel()->selectedRows(1);
     QProgressDialog pd(tr("Deleting.."), tr("Cancel"), 0, selection.size());
     pd.setWindowModality(Qt::WindowModal);
     int steps=0;
     QList<AyikWord> wordlist;
     for(int i=selection.size() - 1;i >=0 ;i--) {
         if (pd.wasCanceled()) break;
-        QModelIndex proxyIndex = selection.at(i);
-        QModelIndex index = tableview->proxyModel->mapToSource(proxyIndex);
+        QModelIndex index = selection.at(i);
 
         QString name = tableview->model->data(index,Qt::EditRole).toString();
         AyikWord w;
@@ -256,6 +249,7 @@ void AyikOption::slot_delete_word()
             wordlist.clear();
             pd.setValue(steps);
         }
+        tableview->model->removeRow(index.row());
     }
     if(wordlist.size()>0) {
         AyikDB::getInstance()->deleteWords(wordlist,err);
@@ -263,39 +257,45 @@ void AyikOption::slot_delete_word()
         wordlist.clear();
         pd.setValue(steps);
     }
-    loadWordsTable();//reload list
+
+    currword.setName("");
+    txt_meaning->clear();
+
+    tableview->model->select();
 }
 
 void AyikOption::slot_delete_all()
 {
     QString err;
     AyikDB::getInstance()->deleteWordsLike(lineedit_word_filter->text(), err);
-    loadWordsTable();//reload list
+
+    currword.setName("");
+    txt_meaning->clear();
+
+    tableview->model->select();
+}
+
+void AyikOption::slot_update_meaning()
+{
+    currword.setMeaning(txt_meaning->toPlainText().replace("\n","<br>"));
+    AyikDB::getInstance()->updateWord(currword);
+    tableview->model->select();
 }
 
 void AyikOption::slot_word_selected(const QModelIndex &current,const QModelIndex &previous)
 {
-    QModelIndex currIndex = tableview->proxyModel->mapToSource(current);
-    QModelIndex prevIndex = tableview->proxyModel->mapToSource(previous);
-    if(prevIndex.isValid() && txt_meaning_changed) {
-        txt_meaning_changed=false;
-        QString prevwordname = tableview->model->getValue(prevIndex.row(),1);
-        AyikWord prevword;
-        QString preverr;
-        AyikDB::getInstance()->getWord(prevword,prevwordname,preverr);
-        if(txt_meaning->toPlainText().isEmpty()) prevword.setMeaning("");
-        else prevword.setMeaning(txt_meaning->toHtml());
-        AyikDB::getInstance()->updateWord(prevword);
-        tableview->model->setValue(previous.row(),3,prevword.getMeaning());
-    }
-    if(currIndex.isValid()) {
-        QString currwordname = tableview->model->getValue(currIndex.row(),1);
-        QString currwordmeaning = tableview->model->getValue(currIndex.row(),3);
-        AyikWord currword;
+    if(current.isValid()) {
+        QModelIndex nameIndex = tableview->model->index(current.row(), 2);
+        QModelIndex meaningIndex = tableview->model->index(current.row(), 3);
+        QString currwordname = tableview->model->data(nameIndex).toString();
+        QString currwordmeaning = tableview->model->data(meaningIndex).toString();
         QString currerr;
         AyikDB::getInstance()->getWord(currword,currwordname,currerr);
         currwordmeaning = currword.getMeaning();
         txt_meaning->setHtml(currwordmeaning);
+    } else {
+        currword.setName("");
+        txt_meaning->clear();
     }
 }
 void AyikOption::slot_txt_meaning_changed()
@@ -304,7 +304,8 @@ void AyikOption::slot_txt_meaning_changed()
 }
 void AyikOption::slot_filterTextChanged(const QString& text)
 {
-    tableview->proxyModel->setFilterWildcard(text);
+    tableview->model->setFilter("tag like '%"+text+"%' or name like '%"+text+"%'");
+    tableview->model->select();
 }
 
 void AyikOption::showHelp()

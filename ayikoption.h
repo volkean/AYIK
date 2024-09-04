@@ -53,16 +53,19 @@ private:
     QPushButton* btn_add_file;
     QPushButton* btn_delete_word;
     QPushButton* btn_delete_all;
+    QPushButton* btn_update_meaning;
     QLineEdit* lineedit_word_filter;
     QStringList tableHeaders;
     TableView* tableview;
 
     QTextEdit* txt_meaning;
     bool txt_meaning_changed;
+    AyikWord currword;
 
-private://functions
+    QSqlDatabase db;
+
+private:
     void createActions();
-    void loadWordsTable();
     void reloadTagList();
 
 protected:
@@ -72,6 +75,7 @@ private slots:
     void slot_add_file();
     void slot_delete_word();
     void slot_delete_all();
+    void slot_update_meaning();
     void slot_word_selected(const QModelIndex &current,const QModelIndex &previous);
     void slot_txt_meaning_changed();
     void slot_filterTextChanged(const QString& text);
