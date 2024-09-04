@@ -22,17 +22,12 @@ class AyikDB : public QObject
 public:
     AyikDB();
     void addWords(const QString& filename,const QString& tag,const QString& rating);
-    int loadWordsXml(const QString& filename,bool append=false);
-    void loadWords(const QString& filename,bool append=false);
-    void loadWords(const QStringList& filenames,bool append=false);
     void loadWordMemdb(const QString& filename,bool append=false);
     static AyikDB* getInstance();
     void getRandomWord(AyikWord& w,const QString& tag,const QString& rating,const QString& ratingOperator,QString &err);
     void getWord(AyikWord& w,const QString& name,QString &err);
     void getWordList(QueryResult &res,QString &err);
     void getTagList(QStringList &list,QString &err);
-    void regenerateShuffle();
-
 
     void createDbTables();
     void insertWord(const AyikWord& w);
@@ -42,8 +37,6 @@ public:
     void deleteWordsLike(const QString& filter,QString &err);
     void updateWord(const AyikWord& w);
     void truncateWords();
-    void testDb();
-
 
     int connect();
     int execute(const QString& sqlstr, QueryResult& qr);
@@ -56,9 +49,6 @@ public:
 
 private:
     static AyikDB* instance;
-
-    QList<AyikWord> words;
-    QList<int> seq;//random sequence
 
 };
 

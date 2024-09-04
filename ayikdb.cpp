@@ -1,5 +1,4 @@
 #include "ayikdb.h"
-#include "dictutil.h"
 #include <QtXml>
 #include <QtWidgets/QProgressDialog>
 
@@ -21,65 +20,7 @@ AyikDB* AyikDB::getInstance()
     if(instance==NULL) instance = new AyikDB();
     return instance;
 }
-int AyikDB::loadWordsXml(const QString& filename,bool append)
-{
-    QDomDocument doc;
-    QFile file( filename );
-    if( !file.open( QIODevice::ReadOnly ) )
-        return -1;
 
-    QString errmsg;
-    if( !doc.setContent( &file,&errmsg ) )
-    {
-        qDebug()<<errmsg;
-        file.close();
-        return -2;
-    }
-    file.close();
-
-    QDomElement root = doc.documentElement();
-    if( root.tagName() != "AYIK" )
-        return -3;
-
-    QDomNode n = root.firstChild();
-    while( !n.isNull() )
-    {
-        QDomElement e = n.toElement();
-        if( !e.isNull() )
-        {
-            if( e.tagName() == "word" )
-            {
-                QString name = e.attribute("name","");
-                QString tag = e.attribute("tag","");
-                QString rating = e.attribute("rating","");
-                QString meaning = e.text();
-                AyikWord a_word(name,meaning,rating,tag);
-                words.append(a_word);
-            }
-        }
-
-        n = n.nextSibling();
-    }
-    return 0;
-}
-void AyikDB::loadWords(const QString& filename,bool append)
-{
-    QFile file(filename);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return;
-
-    if(!append) words.clear();
-
-    QTextStream in(&file);
-    while (!in.atEnd()) {
-        QString line = in.readLine();
-        QStringList list1 = line.split("=");
-        if(list1.length() > 1) {
-            AyikWord a_word(list1.at(0),list1.at(1));
-            words.append(a_word);
-        }
-    }
-}
 void AyikDB::loadWordMemdb(const QString& filename,bool append)
 {
     QFile file(filename);
@@ -98,22 +39,7 @@ void AyikDB::loadWordMemdb(const QString& filename,bool append)
         }
     }
 }
-void AyikDB::loadWords(const QStringList& filenames,bool append)
-{
-    if(!append) words.clear();
 
-    for(int i=0;i<filenames.size();i++) {
-        QString filename = "data/"+filenames.at(i);
-        loadWordMemdb(filename,true);
-    }
-    //testDb();
-    regenerateShuffle();
-}
-void AyikDB::regenerateShuffle()
-{
-    //lets create a shuffle list
-    DictUtil::randomSequence(seq,words.size());
-}
 void AyikDB::createDbTables()
 {
     QSqlQuery query(db);
@@ -133,11 +59,17 @@ void AyikDB::createDbTables()
                ")"
                );
     ERRCHK(query);
-    query.exec("INSERT INTO words(tag,name,meaning,rating) SELECT 'example','awake','',5 "
-               "WHERE NOT EXISTS (SELECT 1 FROM config)"
+    query.exec("INSERT INTO words(tag,name,meaning,rating) "
+               "SELECT 'example','awake','',5 "
+               "UNION ALL SELECT 'example','wake','',5 "
+               "UNION ALL SELECT 'example','sober','',5 "
+               "UNION ALL SELECT 'example','conscious','',5 "
+               "WHERE NOT EXISTS (SELECT 1 FROM config WHERE name='example-loaded' AND value='true')"
                );
     ERRCHK(query);
-    query.exec("INSERT INTO config(name,value) VALUES('example-loaded','true')"
+    query.exec("INSERT INTO config(name,value) "
+               "SELECT 'example-loaded','true' "
+               "WHERE NOT EXISTS (SELECT 1 FROM config WHERE name='example-loaded' AND value='true')"
                );
     ERRCHK(query);
 }
@@ -157,27 +89,7 @@ void AyikDB::insertWord(const AyikWord& w)
 
     ERRCHK(query);
 }
-/*void AyikDB::insertWords(const QList<AyikWord>& wlist)
-{
-    QString err="";
-    QString sqlstr;
-    QueryResult res;
-    execute("BEGIN TRANSACTION",res);
-    for(int i=0;i<wlist.size();i++) {
-        AyikWord w = wlist.at(i);
-        sqlstr = "INSERT INTO words(tag,name,meaning,rating) VALUES("
-                  "'"+w.getTag()+"',"
-                  "'"+w.getName()+"',"
-                  "'"+w.getMeaning()+"',"
-                  "'"+w.getRating()+"')";
-        if(execute(sqlstr,res)==0) {
-        } else {
-            err = error();
-            qDebug()<<err;
-        }
-    }
-    execute("END",res);
-}*/
+
 void AyikDB::insertWords(const QList<AyikWord>& wlist)
 {
     QString err="";
@@ -206,24 +118,7 @@ void AyikDB::deleteWord(const AyikWord& w,QString &err)
         err = error();
     }
 }
-/*void AyikDB::deleteWords(const QList<AyikWord>& wlist,QString &err)
-{
-    err="";
-    QString sqlstr;
-    sqlstr = "DELETE FROM words WHERE name in (";
-    for(int i=0;i<wlist.size();i++) {
-        AyikWord w = wlist.at(i);
-        sqlstr += "'"+w.getName()+"',";
-    }
-    sqlstr += "'')";
-    //qDebug()<<sqlstr;
-    QueryResult res;
-    if(execute(sqlstr,res)==0) {
-    } else {
-        err = error();
-        qDebug()<<err;
-    }
-}*/
+
 void AyikDB::deleteWords(const QList<AyikWord>& wlist,QString &err)
 {
     err="";
@@ -267,21 +162,7 @@ void AyikDB::updateWord(const AyikWord& w)
         qDebug()<<err;
     }
 }
-void AyikDB::testDb()
-{
-    createDbTables();
-    AyikWord w1("insane","deli","4");
-    insertWord(w1);
-    insertWord(w1);
-    insertWord(w1);
 
-    QSqlQuery query("SELECT name,meaning,rating FROM words");
-    while (query.next()) {        
-        qDebug() << query.value(0).toString()
-                << query.value(1).toString()
-                << query.value(2).toString();
-    }
-}
 void AyikDB::truncateWords()
 {
     createDbTables();

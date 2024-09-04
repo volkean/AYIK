@@ -12,6 +12,7 @@ QString AyikWeb::getLastWordMeaning()
     return lastWordMeaning;
 }
 
+//TODO add other methods/sources to lookup and make it configurable
 void AyikWeb::lookupWordMeaning(AyikWord ayikWord) {
     lookupWordMeaningFromSeslisozluk(ayikWord);
 }
