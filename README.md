@@ -9,10 +9,15 @@ Note that codebase needs some maintenance in regard to code quality, e.g. dead c
 C++, QT, Sqlite
 
 ## Screenshots
+
+### System Tray and Main Screen
 ![Tray, popup](images/screenshots/ayik-tray-popup.jpg "Tray, popup")
 
+### Settings - General
 ![Settings-General](images/screenshots/ayik-settings-general.jpg "Settings-General")
 
+### Settings - Words
 ![Settings-Words](images/screenshots/ayik-settings-words.jpg "Settings-Words")
 
+### Settings - Help
 ![Settings-Help](images/screenshots/ayik-settings-help.jpg "Settings-Help")
