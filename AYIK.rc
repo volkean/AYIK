@@ -1,7 +1,7 @@
 IDI_ICON1               ICON    DISCARDABLE     "images/ayik.ico"
 1 VERSIONINFO
-  FILEVERSION 1,2,0,13
-  PRODUCTVERSION 1,2,0,13
+  FILEVERSION 1,0,0,0
+  PRODUCTVERSION 1,0,0,0
   FILEFLAGSMASK 0x3fL
  #ifdef _DEBUG
   FILEFLAGS 0x1L
@@ -18,13 +18,13 @@ IDI_ICON1               ICON    DISCARDABLE     "images/ayik.ico"
          BEGIN
              VALUE "Author", "Volkan AK\0"
              VALUE "FileDescription", "AYIK\0"
-             VALUE "LegalCopyright", "Copyright © 2010 V.A.\0"
+             VALUE "LegalCopyright", "Copyright © 2024 V.A.\0"
              VALUE "Copyright", "AYIK\0"
-             VALUE "FileVersion", "1, 2, 0, 13\0"
+             VALUE "FileVersion", "1, 0, 0, 0\0"
              VALUE "InternalName", "AYIK\0"
              VALUE "OriginalFilename", "AYIK.exe\0"
              VALUE "ProductName", "AYIK\0"
-             VALUE "ProductVersion", "1, 2, 0, 13\0"
+             VALUE "ProductVersion", "1, 0, 0, 0\0"
          END
      END
      BLOCK "VarFileInfo"
